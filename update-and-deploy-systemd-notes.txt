@@ -1,0 +1,49 @@
+Update-and-Deploy Automation Setup Notes
+=======================================
+
+What was configured
+- A user-level systemd service was created to run:
+  /home/bol/code/rocket-news-dashboard/update-and-deploy.sh
+- A user-level systemd timer was created to trigger that service every 15 minutes.
+
+Files created
+- /home/bol/.config/systemd/user/update-and-deploy.service
+- /home/bol/.config/systemd/user/update-and-deploy.timer
+
+Service unit details (update-and-deploy.service)
+- Type=oneshot
+- WorkingDirectory=/home/bol/code/rocket-news-dashboard
+- ExecStart=/home/bol/code/rocket-news-dashboard/update-and-deploy.sh
+- Logs are sent to the user journal (StandardOutput/StandardError=journal)
+
+Timer unit details (update-and-deploy.timer)
+- OnCalendar=*:0/15
+- Persistent=true
+- Unit=update-and-deploy.service
+- WantedBy=timers.target
+
+Activation steps performed
+1) systemctl --user daemon-reload
+2) systemctl --user enable --now update-and-deploy.timer
+
+Verification performed
+- Confirmed timer appears in list-timers:
+  systemctl --user list-timers --all | grep update-and-deploy.timer
+- Confirmed state fields:
+  systemctl --user show update-and-deploy.timer \
+    -p ActiveState -p SubState -p NextElapseUSecRealtime -p LastTriggerUSec
+
+Observed status at setup time
+- ActiveState=active
+- SubState=waiting
+- NextElapseUSecRealtime was populated for the upcoming 15-minute interval.
+
+Useful follow-up commands
+- Check timer schedule:
+  systemctl --user list-timers --all | grep update-and-deploy.timer
+- Check service logs:
+  journalctl --user -u update-and-deploy.service --no-pager -n 100
+- Stop timer:
+  systemctl --user stop update-and-deploy.timer
+- Disable timer:
+  systemctl --user disable update-and-deploy.timer
