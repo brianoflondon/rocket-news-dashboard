@@ -16,15 +16,19 @@ fi
 echo "Fetching latest from ${REMOTE}/${BRANCH}..."
 git fetch "$REMOTE" "$BRANCH"
 
+head_before=$(git rev-parse HEAD)
+
 echo "Pulling changes from ${REMOTE}/${BRANCH}..."
-pull_output=$(git pull --ff-only "$REMOTE" "$BRANCH" 2>&1)
+git pull --ff-only "$REMOTE" "$BRANCH"
 
-echo "$pull_output"
+head_after=$(git rev-parse HEAD)
 
-if [[ "$pull_output" == *"Already up to date."* ]]; then
+if [[ "$head_before" == "$head_after" ]]; then
   echo "No updates found. Skipping docker compose."
   exit 0
 fi
 
 echo "Changes detected. Rebuilding/running docker compose..."
 docker compose up --build -d
+
+echo "Done."
